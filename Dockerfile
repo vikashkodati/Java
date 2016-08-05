@@ -15,7 +15,7 @@ ENV MAJOR=8
 RUN apk update --purge 
 RUN apk add curl 
 RUN apk add unzip=6.0-r1 
-RUN apk add openjdk8-jre-base=${VERSION}
+RUN apk add openjdk8-jre-base=8.92.14-r0
 
 RUN curl -s -k -L -C - -b "oraclelicense=accept-securebackup-cookie" http://download.oracle.com/otn-pub/java/jce/${MAJOR}/jce_policy-${MAJOR}.zip > /tmp/jce_policy-${MAJOR}.zip \
 && unzip -d /tmp/ /tmp/jce_policy-${MAJOR}.zip \
