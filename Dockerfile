@@ -1,29 +1,49 @@
-FROM alpine:3.4
+FROM alpine:3.2
 
-# A few problems with compiling Java from source:
-#  1. Oracle.  Licensing prevents us from redistributing the official JDK.
-#  2. Compiling OpenJDK also requires the JDK to be installed, and it gets
-#       really hairy.
+	# Install dependencies 
+	RUN apk --update add curl ca-certificates tar sqlite icu bash && \
+	    curl -Ls https://circle-artifacts.com/gh/andyshinn/alpine-pkg-glibc/6/artifacts/0/home/ubuntu/alpine-pkg-glibc/packages/x86_64/glibc-2.21-r2.apk > /tmp/glibc-2.21-r2.apk && \
+	    apk add --allow-untrusted /tmp/glibc-2.21-r2.apk
 
-# Default to UTF-8 file.encoding
-ENV LANG C.UTF-8
 
-# add a simple script that can auto-detect the appropriate JAVA_HOME value
-# based on whether the JDK or only the JRE is installed
-RUN { \
-		echo '#!/bin/sh'; \
-		echo 'set -e'; \
-		echo; \
-		echo 'dirname "$(dirname "$(readlink -f "$(which javac || which java)")")"'; \
-	} > /usr/local/bin/docker-java-home \
-	&& chmod +x /usr/local/bin/docker-java-home
-ENV JAVA_HOME /usr/lib/jvm/java-1.8-openjdk
-ENV PATH $PATH:/usr/lib/jvm/java-1.8-openjdk/jre/bin:/usr/lib/jvm/java-1.8-openjdk/bin
+	# Java version
+	ENV JAVA_VERSION_MAJOR 7
+	ENV JAVA_VERSION_MINOR 79
+	ENV JAVA_VERSION_BUILD 15
+	ENV JAVA_PACKAGE       jdk
 
-ENV JAVA_VERSION 8u92
-ENV JAVA_ALPINE_VERSION 8.92.14-r1
 
-RUN set -x \
-	&& apk add --no-cache \
-		openjdk8="$JAVA_ALPINE_VERSION" \
-	&& [ "$JAVA_HOME" = "$(docker-java-home)" ]
+	# Download and unarchive Java
+	RUN mkdir /opt && curl -jksSLH "Cookie: oraclelicense=accept-securebackup-cookie"\
+	  http://download.oracle.com/otn-pub/java/jdk/7u79-b15/jdk-7u79-linux-x64.tar.gz \
+	    | tar -xzf - -C /opt &&\
+	    ln -s /opt/jdk1.7.0_79 /opt/jdk &&\
+	    rm -rf /opt/jdk/*src.zip \
+	           /opt/jdk/lib/missioncontrol \
+	           /opt/jdk/lib/visualvm \
+	           /opt/jdk/lib/*javafx* \
+	           /opt/jdk/jre/lib/plugin.jar \
+	           /opt/jdk/jre/lib/ext/jfxrt.jar \
+	           /opt/jdk/jre/bin/javaws \
+	           /opt/jdk/jre/lib/javaws.jar \
+	           /opt/jdk/jre/lib/desktop \
+	           /opt/jdk/jre/plugin \
+	           /opt/jdk/jre/lib/deploy* \
+	           /opt/jdk/jre/lib/*javafx* \
+	           /opt/jdk/jre/lib/*jfx* \
+	           /opt/jdk/jre/lib/amd64/libdecora_sse.so \
+	           /opt/jdk/jre/lib/amd64/libprism_*.so \
+	           /opt/jdk/jre/lib/amd64/libfxplugins.so \
+	           /opt/jdk/jre/lib/amd64/libglass.so \
+	           /opt/jdk/jre/lib/amd64/libgstreamer-lite.so \
+	           /opt/jdk/jre/lib/amd64/libjavafx*.so \
+	           /opt/jdk/jre/lib/amd64/libjfx*.so \
+	    && addgroup -g 999 app && adduser -D  -G app -s /bin/false -u 999 app \
+	    && rm -rf /tmp/* \
+	    && rm -rf /var/cache/apk/* \
+	    && echo 'hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4' >> /etc/nsswitch.conf
+
+
+	# Set environment
+	ENV JAVA_HOME /opt/jdk
+	ENV PATH ${PATH}:/opt/jdk/bin	
