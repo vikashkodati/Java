@@ -13,7 +13,7 @@ ARG VERSION=8.92.14-r0
 ENV MAJOR=8
 
 RUN apk update --purge 
-RUN apk add curl=7.47.0-r0 
+RUN apk add curl 
 RUN apk add unzip=6.0-r1 
 RUN apk add openjdk8-jre-base=${VERSION}
 
