@@ -1,20 +1,29 @@
-FROM alpine:3.3
-ARG VERSION=8.92.14-r0
-ENV MAJOR=8
+FROM alpine:3.4
 
-RUN apk update --purge \
-&& apk add curl=7.47.0-r0 \
-&& apk add unzip=6.0-r1 \
-&& apk add openjdk8-jre-base=${VERSION}
+# A few problems with compiling Java from source:
+#  1. Oracle.  Licensing prevents us from redistributing the official JDK.
+#  2. Compiling OpenJDK also requires the JDK to be installed, and it gets
+#       really hairy.
 
-RUN curl -s -k -L -C - -b "oraclelicense=accept-securebackup-cookie" http://download.oracle.com/otn-pub/java/jce/${MAJOR}/jce_policy-${MAJOR}.zip > /tmp/jce_policy-${MAJOR}.zip \
-&& unzip -d /tmp/ /tmp/jce_policy-${MAJOR}.zip \
-&& rm -vf /usr/lib/jvm/java-1.${MAJOR}-openjdk/jre/lib/security/*.jar \
-&& cp -vf /tmp/UnlimitedJCEPolicyJDK${MAJOR}/*.jar /usr/lib/jvm/java-1.${MAJOR}-openjdk/jre/lib/security \
-&& rm -rf /tmp/*
+# Default to UTF-8 file.encoding
+ENV LANG C.UTF-8
 
-RUN apk del --force --purge unzip \
-&& apk del --force --purge curl
+# add a simple script that can auto-detect the appropriate JAVA_HOME value
+# based on whether the JDK or only the JRE is installed
+RUN { \
+		echo '#!/bin/sh'; \
+		echo 'set -e'; \
+		echo; \
+		echo 'dirname "$(dirname "$(readlink -f "$(which javac || which java)")")"'; \
+	} > /usr/local/bin/docker-java-home \
+	&& chmod +x /usr/local/bin/docker-java-home
+ENV JAVA_HOME /usr/lib/jvm/java-1.8-openjdk
+ENV PATH $PATH:/usr/lib/jvm/java-1.8-openjdk/jre/bin:/usr/lib/jvm/java-1.8-openjdk/bin
 
-CMD ["java","-version"]
+ENV JAVA_VERSION 8u92
+ENV JAVA_ALPINE_VERSION 8.92.14-r1
 
+RUN set -x \
+	&& apk add --no-cache \
+		openjdk8="$JAVA_ALPINE_VERSION" \
+	&& [ "$JAVA_HOME" = "$(docker-java-home)" ]
