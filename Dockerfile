@@ -13,9 +13,9 @@ ARG VERSION=8.92.14-r0
 ENV MAJOR=8
 
 RUN apk update --purge \
-&& apk add curl=7.47.0-r0 \
-&& apk add unzip=6.0-r1 \
-&& apk add openjdk8-jre-base=${VERSION}
+RUN apk add curl=7.47.0-r0 \
+RUN apk add unzip=6.0-r1 \
+RUN apk add openjdk8-jre-base=${VERSION}
 
 RUN apk --no-cache add curl ca-certificates && \
     curl -L -o /tmp/glibc-2.21-r2.apk "https://circle-artifacts.com/gh/andyshinn/alpine-pkg-glibc/6/artifacts/0/home/ubuntu/alpine-pkg-glibc/packages/x86_64/glibc-2.21-r2.apk" && \
