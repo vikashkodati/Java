@@ -1,4 +1,4 @@
-FROM evild/alpine-base:1.0.0
+FROM alpine:3.2
 
 
 ENV JAVA_VERSION_MAJOR=8
